@@ -53,16 +53,16 @@ class SensioSceneEntity(SceneEntity):
 
     async def async_added_to_hass(self) -> None:
         """Track controller availability."""
-        self.async_on_remove(self._hub.add_connection_listener(self._handle_connection))
+        self.async_on_remove(self._hub.add_availability_listener(self._handle_availability))
 
     @callback
-    def _handle_connection(self, connected: bool) -> None:
+    def _handle_availability(self, available: bool) -> None:
         self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
-        """Unavailable while the controller connection is down."""
-        return self._hub.connected
+        """Unavailable only if the controller connection stays down past the grace period."""
+        return self._hub.available
 
     async def async_activate(self, **kwargs: Any) -> None:
         """Activate the scene."""

@@ -61,20 +61,20 @@ class SensioLightEntity(LightEntity):
     async def async_added_to_hass(self) -> None:
         """Subscribe to state and connection updates."""
         self.async_on_remove(self._light.add_listener(self._handle_update))
-        self.async_on_remove(self._hub.add_connection_listener(self._handle_connection))
+        self.async_on_remove(self._hub.add_availability_listener(self._handle_availability))
 
     @callback
     def _handle_update(self) -> None:
         self.async_write_ha_state()
 
     @callback
-    def _handle_connection(self, connected: bool) -> None:
+    def _handle_availability(self, available: bool) -> None:
         self.async_write_ha_state()
 
     @property
     def available(self) -> bool:
-        """Unavailable while the controller connection is down."""
-        return self._hub.connected
+        """Unavailable only if the controller connection stays down past the grace period."""
+        return self._hub.available
 
     @property
     def is_on(self) -> bool | None:
