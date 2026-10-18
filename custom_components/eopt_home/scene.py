@@ -7,9 +7,10 @@ from typing import Any
 
 from homeassistant.components.scene import Scene as SceneEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from sensio_lib import Hub, Scene
+from .sensio_lib import Hub, Scene, SensioException
 
 from .const import DOMAIN
 
@@ -25,7 +26,7 @@ async def async_setup_entry(
     hub: Hub = hass.data[DOMAIN][entry.entry_id]
     scenes = hub.get_scenes()
 
-    entities = [SensioSceneEntity(scene, entry) for scene in scenes]
+    entities = [SensioSceneEntity(scene, hub, entry) for scene in scenes]
     async_add_entities(entities)
     _LOGGER.debug("Added %d Eopt Home scene entities", len(entities))
 
@@ -35,9 +36,12 @@ class SensioSceneEntity(SceneEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, scene: Scene, entry: ConfigEntry) -> None:
+    _attr_should_poll = False
+
+    def __init__(self, scene: Scene, hub: Hub, entry: ConfigEntry) -> None:
         """Initialize the scene entity."""
         self._scene = scene
+        self._hub = hub
         self._attr_unique_id = f"{DOMAIN}_{scene.unique_id}"
         self._attr_name = scene.name
         self._attr_device_info = {
@@ -47,6 +51,22 @@ class SensioSceneEntity(SceneEntity):
             "model": "Sensio Controller",
         }
 
+    async def async_added_to_hass(self) -> None:
+        """Track controller availability."""
+        self.async_on_remove(self._hub.add_connection_listener(self._handle_connection))
+
+    @callback
+    def _handle_connection(self, connected: bool) -> None:
+        self.async_write_ha_state()
+
+    @property
+    def available(self) -> bool:
+        """Unavailable while the controller connection is down."""
+        return self._hub.connected
+
     async def async_activate(self, **kwargs: Any) -> None:
         """Activate the scene."""
-        await self._scene.activate()
+        try:
+            await self._scene.activate()
+        except SensioException as err:
+            raise HomeAssistantError(f"Could not activate {self.name}: {err}") from err

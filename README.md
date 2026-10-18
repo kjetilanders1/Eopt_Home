@@ -8,9 +8,14 @@ A [Home Assistant](https://www.home-assistant.io/) custom component for controll
 - **Scenes** — activate scenes configured in your xComfort project
 - **Sync button** — re-fetch your project data from Eopt Home at any time
 
+### Connection and state (this fork)
+
+- The controller connection is read continuously and **reconnects automatically** (backoff 1–60 s). Entities are *unavailable* while it is down, instead of failing with "Not connected to controller".
+- **Real light state**: the controller pushes a notification for every change, also from wall switches. Lights with a state function in the project show their real state; room "All Lights" are on when any light in the room is on. State is unknown until the first change after (re)connecting.
+- The library is vendored (`custom_components/eopt_home/sensio_lib`, v1.3.0), so no PyPI requirement is installed.
+
 ### Limitations
 
-- Commands are sent to the X1 controller but no state is read back. If lights are toggled with physical switches the status in Home Assistant will be out of sync.
 - Only lights and scenes are supported.
 
 ## Installation

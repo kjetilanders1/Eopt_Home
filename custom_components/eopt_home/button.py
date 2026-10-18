@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.storage import Store
-from sensio_lib import SensioApi, SensioAuthenticationError, SensioConnectionError
+from .sensio_lib import SensioApi, SensioAuthenticationError, SensioConnectionError
 
 from .const import (
     CONF_PASSWORD,

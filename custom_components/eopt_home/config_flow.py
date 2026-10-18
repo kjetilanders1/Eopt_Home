@@ -10,7 +10,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
-from sensio_lib import SensioApi, SensioAuthenticationError, SensioConnectionError
+from .sensio_lib import SensioApi, SensioAuthenticationError, SensioConnectionError
 
 from .const import (
     CONF_HUB_IP,

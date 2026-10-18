@@ -1,6 +1,6 @@
 """Helper functions for the Eopt Home integration."""
 
-from sensio_lib import SensioEnvironment
+from .sensio_lib import SensioEnvironment
 
 
 def get_environment(use_ha_pilot: bool) -> SensioEnvironment:
