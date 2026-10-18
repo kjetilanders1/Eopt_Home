@@ -140,3 +140,12 @@ async def test_clean_error_if_connection_drops_mid_call(hass, controller, setup)
     with patch.object(Hub, "connected", new_callable=PropertyMock, return_value=True):
         with pytest.raises(HomeAssistantError, match="Could not turn on"):
             await hass.services.async_call("light", "turn_on", {"entity_id": LYS_A}, blocking=True)
+
+
+async def test_drop_connection_service_reconnects_and_sends_nothing(hass, controller, setup):
+    hub = hass.data[DOMAIN][setup.entry_id]
+    await hass.services.async_call(DOMAIN, "drop_connection", {}, blocking=True)
+    await settle(hass, lambda: controller.connections == 2 and hub.connected)
+    assert controller.received == []
+    await controller.push("RSN 103 M_R_LysA_State 23 1 0 1.00")
+    await settle(hass, lambda: hass.states.get(LYS_A).state == STATE_ON)

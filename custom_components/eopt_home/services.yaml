@@ -1,0 +1,5 @@
+drop_connection:
+  name: Drop controller connection
+  description: >-
+    Diagnostics: closes the TCP connection to the Sensio controller so the
+    automatic reconnect can be tested. Sends nothing to the controller.
