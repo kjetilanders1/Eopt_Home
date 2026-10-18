@@ -14,6 +14,10 @@ A [Home Assistant](https://www.home-assistant.io/) custom component for controll
 - **Real light state**: the controller pushes a notification for every change, also from wall switches. Lights with a state function in the project show their real state; room "All Lights" are on when any light in the room is on. State is unknown until the first change after (re)connecting.
 - The library is vendored (`custom_components/eopt_home/sensio_lib`, v1.3.1), so no PyPI requirement is installed.
 
+### Heating (read-only, this fork)
+
+Per thermostat zone: temperature and setpoint sensors, plus *heat demand* and *heat relay* binary sensors; for the house: power (W) and energy (kWh, usable in the Energy dashboard). Values come from the controller's notifications and stay unknown until the first one after (re)connecting — thermostats only report when the temperature changes, the meter every 10 minutes. Nothing is sent to the controller; heating control is not implemented.
+
 ### Limitations
 
 - Only lights and scenes are supported.

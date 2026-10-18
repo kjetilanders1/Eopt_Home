@@ -20,6 +20,10 @@ FUNCS = {"functions": [
     {"address": 301, "subType": "LightOnRoom", "name": "B_LightStue_ON",  "displayName": "On",  "zoneId": "z-stue", "subGroupId": 0},
     {"address": 302, "subType": "LightOffRoom","name": "B_LightStue_OFF", "displayName": "Off", "zoneId": "z-stue", "subGroupId": 0},
     {"address": 401, "subType": "LigthSc1Room","name": "B_LightStue_Sc1", "displayName": "Sc1", "zoneId": "z-stue", "subGroupId": 0},
+    {"address": 1001, "subType": "Thermostat", "name": "TH_Stue001", "displayName": "Stue Thermostat", "zoneId": "z-stue", "subGroupId": 0},
+    {"address": 1002, "subType": "HeatRelay",  "name": "R_VKStue001", "displayName": "Stue Temperature Relay", "zoneId": "z-stue", "subGroupId": 0},
+    {"address": 3001, "subType": "MeterReader", "name": "M_MeterCur", "displayName": "Meter value", "zoneId": "z-house", "subGroupId": 0},
+    {"address": 3002, "subType": "MeterSum", "name": "M_MeterSum", "displayName": "Meter Sum", "zoneId": "z-house", "subGroupId": 0},
 ]}
 
 # The fake controller is a real TCP server on localhost.
@@ -153,3 +157,37 @@ async def test_drop_connection_service_reconnects_and_sends_nothing(hass, contro
     assert controller.received == []
     await controller.push("RSN 103 M_R_LysA_State 23 1 0 1.00")
     await settle(hass, lambda: hass.states.get(LYS_A).state == STATE_ON)
+
+
+
+def _eid(hass, unique_id):
+    from homeassistant.helpers import entity_registry as er
+    return er.async_get(hass).async_get_entity_id(
+        unique_id.split("|")[0], DOMAIN, unique_id.split("|")[1])
+
+
+async def test_heating_sensors_read_only(hass, controller, setup):
+    temp = _eid(hass, "sensor|eopt_home_z-stue_climate_temperature")
+    setp = _eid(hass, "sensor|eopt_home_z-stue_climate_setpoint")
+    demand = _eid(hass, "binary_sensor|eopt_home_z-stue_climate_heat_demand")
+    relay = _eid(hass, "binary_sensor|eopt_home_z-stue_climate_relay")
+    power = _eid(hass, "sensor|eopt_home_test_meter_power")
+    energy = _eid(hass, "sensor|eopt_home_test_meter_energy")
+    assert all((temp, setp, demand, relay, power, energy))
+    assert hass.states.get(temp).state == STATE_UNKNOWN
+
+    await controller.push("RSN 1001 TH_Stue001 7 1 1 22.0 21.4 -0.3")
+    await controller.push("RSN 1002 R_VKStue001 8 1 1 0")
+    await controller.push("RSN 3001 M_MeterCur 23 1 0 1500.00")
+    await controller.push("RSN 3002 M_MeterSum 23 1 0 36000000.00")
+    await settle(hass, lambda: hass.states.get(energy).state == "10.0")
+
+    t = hass.states.get(temp)
+    assert (t.state, t.attributes["unit_of_measurement"], t.attributes["device_class"]) == ("21.4", "°C", "temperature")
+    assert hass.states.get(setp).state == "22.0"
+    assert hass.states.get(demand).state == STATE_ON and hass.states.get(relay).state == STATE_ON
+    p = hass.states.get(power)
+    assert (p.state, p.attributes["unit_of_measurement"]) == ("1500.0", "W")
+    e = hass.states.get(energy)
+    assert (e.attributes["unit_of_measurement"], e.attributes["state_class"]) == ("kWh", "total_increasing")
+    assert controller.received == []        # read-only: nothing sent to the controller

@@ -29,7 +29,7 @@ from .helpers import get_environment
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[str] = ["light", "scene", "button"]
+PLATFORMS: list[str] = ["light", "scene", "button", "sensor", "binary_sensor"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
